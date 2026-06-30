@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Game Theory Engine v2.4 — 9x9 Court Matrix</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{color-scheme:dark;--bg:#050711;--panel:#0f172a;--text:#e5e7eb;--muted:#9ca3af;--line:#2e3a55;--carbon:#93c5fd;--silicon:#86efac;--light:#fef08a;--shadow:#c084fc;--hot:#f97316}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 20% 5%,rgba(147,197,253,.18),transparent 28%),radial-gradient(circle at 80% 5%,rgba(134,239,172,.16),transparent 26%),linear-gradient(180deg,#080b18,var(--bg));color:var(--text);font-family:Inter,system-ui,Segoe UI,sans-serif}
+header{padding:22px;border-bottom:1px solid var(--line);background:rgba(5,7,17,.72);position:sticky;top:0;z-index:5;backdrop-filter:blur(14px)}
+h1{margin:0 0 6px;font-size:24px}.sub{color:var(--muted);font-size:14px}
+main{display:grid;grid-template-columns:320px 1fr 380px;gap:16px;padding:16px}
+section{background:rgba(15,23,42,.9);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.28)}
+button{width:100%;padding:11px;border-radius:13px;border:1px solid var(--line);background:linear-gradient(180deg,#1f2d48,#111827);color:var(--text);cursor:pointer;margin-top:10px;font-weight:800}
+button:hover{border-color:white}
+h2{font-size:16px;margin:0 0 12px}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.card{background:linear-gradient(180deg,#172033,#101827);border:1px solid var(--line);border-radius:14px;padding:12px}
+.metric{font-size:20px;font-weight:900}.muted{color:var(--muted);font-size:13px}
+.matrixWrap{position:relative;display:grid;grid-template-columns:100px 1fr;gap:10px;padding:14px;border:1px solid rgba(255,255,255,.12);border-radius:22px;background:radial-gradient(circle at center,rgba(255,255,255,.045),rgba(0,0,0,.16));overflow:hidden}
+.topLabels{grid-column:2;display:grid;grid-template-columns:repeat(9,1fr);gap:5px}
+.leftLabels{display:grid;grid-template-rows:repeat(9,1fr);gap:5px}
+.matrix{display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);gap:5px}
+.label{border:1px solid var(--line);border-radius:8px;padding:6px;background:#070914;color:var(--muted);font-size:10px;text-align:center;display:flex;align-items:center;justify-content:center;min-height:42px}
+.cell{min-height:42px;border-radius:8px;border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;cursor:pointer;transition:.12s ease;position:relative;overflow:hidden}
+.cell:hover{transform:scale(1.05);filter:brightness(1.2);z-index:3}
+.cell::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 35% 25%,rgba(255,255,255,.20),transparent 34%)}
+.cell span{position:relative;z-index:2}
+.selected{outline:3px solid var(--hot);box-shadow:0 0 22px rgba(249,115,22,.9)}
+pre{white-space:pre-wrap;background:#070914;border:1px solid var(--line);padding:12px;border-radius:12px;max-height:340px;overflow:auto;font-size:12px}
+.barRow{margin:10px 0}.barLabel{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px}.barTrack{height:9px;border-radius:999px;background:#0b1020;border:1px solid var(--line);overflow:hidden}.barFill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--carbon),var(--silicon),var(--light),var(--shadow))}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.legend div{background:#070914;border:1px solid var(--line);border-radius:12px;padding:8px;font-size:12px;color:var(--muted)}
+@media(max-width:1100px){main{grid-template-columns:1fr}.matrixWrap{overflow:auto}.matrix{min-width:720px}.topLabels{min-width:720px}}
+</style>
+</head>
+<body>
+<header>
+<h1>Game Theory Core Engine v2.4</h1>
+<div class="sub">9 vs 9 Court Matrix: every Carbon role contests every Silicon role — 81 matchups.</div>
+</header>
+
+<main>
+<section>
+<h2>Controls</h2>
+<button onclick="selectBest()">Best Convergence</button>
+<button onclick="selectContrast()">Strongest Contrast</button>
+<button onclick="pulseMatrix()">Pulse 81</button>
+<button onclick="resetBoard()">Reset</button>
+<h2 style="margin-top:20px">Not 1:1</h2>
+<pre>Carbon roles:
+9
+
+Silicon roles:
+9
+
+Matchups:
+9 × 9 = 81
+
+King can face Jester.
+Pawn can face Queen.
+Witness can face anyone.</pre>
+<div class="legend">
+<div>Light: reveal / continuity</div>
+<div>Shadow: test / contrast</div>
+<div>Convergence: useful fit</div>
+<div>Contrast: useful tension</div>
+</div>
+</section>
+
+<section>
+<h2>81 Matchup Matrix</h2>
+<div class="metrics">
+<div class="card"><div class="metric" id="selectedId">-</div><div class="muted">Selected</div></div>
+<div class="card"><div class="metric" id="interaction">-</div><div class="muted">Interaction</div></div>
+<div class="card"><div class="metric" id="convergence">0</div><div class="muted">Convergence</div></div>
+<div class="card"><div class="metric" id="winner">-</div><div class="muted">Winner</div></div>
+</div>
+<div class="matrixWrap">
+<div></div>
+<div id="topLabels" class="topLabels"></div>
+<div id="leftLabels" class="leftLabels"></div>
+<div id="matrix" class="matrix"></div>
+</div>
+</section>
+
+<section>
+<h2>Matchup Inspector</h2>
+<pre id="inspector"></pre>
+<h2>Forces</h2>
+<div id="bars"></div>
+<h2 style="margin-top:20px">Board Output</h2>
+<pre id="output"></pre>
+</section>
+</main>
+
+<script>
+const roles=[
+ ["King","Light","sovereign"],["Queen","Shadow","power"],["Jester","Light","disruption"],
+ ["Castle","Light","defense"],["Rook","Shadow","line_pressure"],["Bishop","Light","diagonal_inference"],
+ ["Knight","Shadow","nonlinear_move"],["Pawn","Light","sacrifice_path"],["Witness","Shadow","observation"]
+];
+let carbon=[], silicon=[], matchups=[], selected;
+
+function roleScore(r){return ((r.k+r.q+r.v)/3)*(r.moniker==="Light"?1.08:.97)}
+function build(){
+ carbon=[];silicon=[];matchups=[];
+ roles.forEach((r,i)=>{
+  const [role,moniker,archetype]=r, base=(i+1)/9;
+  carbon.push({side:"carbon",role,moniker,archetype,index:i+1,k:.80+base*.48,q:.92+(1-Math.abs(.5-base))*.34,v:.78+base*.36});
+  silicon.push({side:"silicon",role,moniker:moniker==="Light"?"Shadow":"Light",archetype,index:i+1,k:.82+base*.38,q:.84+(1-Math.abs(.5-base))*.28,v:.94+base*.44});
+ });
+ for(const c of carbon)for(const s of silicon)matchups.push(makeMatch(c,s));
+ selected=bestConvergence();
+}
+function interaction(c,s){
+ if(c.role===s.role)return"mirror";
+ if(c.moniker!==s.moniker&&c.archetype===s.archetype)return"shadow_mirror";
+ const pair=new Set([c.role,s.role]);
+ const has=(a,b)=>pair.has(a)&&pair.has(b);
+ if(has("King","Queen")||has("King","Witness"))return"sovereign_check";
+ if(has("Jester","King")||has("Jester","Queen"))return"deception";
+ if(has("Castle","Rook")||has("Castle","Bishop"))return"shield";
+ if(has("Knight","Bishop")||has("Knight","Rook"))return"counter";
+ if(has("Pawn","Queen")||has("Pawn","King"))return"sacrifice";
+ if(pair.has("Witness"))return"witness";
+ if(c.moniker===s.moniker)return"alliance";
+ return"pressure";
+}
+function mult(t){return({mirror:1,shadow_mirror:1.08,sovereign_check:1.18,deception:1.22,shield:1.12,counter:1.20,sacrifice:1.15,witness:1.10,alliance:1.06,pressure:1.04}[t]||1)}
+function makeMatch(c,s){
+ const t=interaction(c,s), m=mult(t);
+ const cf=roleScore(c)*m, sf=roleScore(s)*(2-m);
+ const contrast=Math.abs(cf-sf), alignment=1-(contrast/Math.max(cf,sf,1));
+ const convergence=((cf+sf)/2)*alignment;
+ return {id:`${c.role}_vs_${s.role}`,carbon:{...c,score:roleScore(c)},silicon:{...s,score:roleScore(s)},interaction:t,carbon_force:cf,silicon_force:sf,contrast,alignment,convergence,winner:cf>sf?"carbon":sf>cf?"silicon":"balanced"};
+}
+function bestConvergence(){return [...matchups].sort((a,b)=>b.convergence-a.convergence)[0]}
+function strongestContrast(){return [...matchups].sort((a,b)=>b.contrast-a.contrast)[0]}
+function resetBoard(){build();render()}
+function selectBest(){selected=bestConvergence();render()}
+function selectContrast(){selected=strongestContrast();render()}
+function pulseMatrix(){let i=0;const timer=setInterval(()=>{selected=matchups[i];render();i++;if(i>=81)clearInterval(timer)},55)}
+function shade(m){
+ const vals=matchups.map(x=>x.convergence), min=Math.min(...vals), max=Math.max(...vals), t=(m.convergence-min)/(max-min||1);
+ if(m.winner==="carbon")return`rgba(147,197,253,${.20+t*.68})`;
+ if(m.winner==="silicon")return`rgba(134,239,172,${.20+t*.68})`;
+ return`rgba(254,240,138,${.25+t*.62})`;
+}
+function renderMatrix(){
+ topLabels.innerHTML="";leftLabels.innerHTML="";matrix.innerHTML="";
+ for(const s of silicon){const d=document.createElement("div");d.className="label";d.textContent=s.role;topLabels.appendChild(d)}
+ for(const c of carbon){const d=document.createElement("div");d.className="label";d.textContent=c.role;leftLabels.appendChild(d)}
+ for(const c of carbon){
+  for(const s of silicon){
+   const m=matchups.find(x=>x.carbon.role===c.role&&x.silicon.role===s.role);
+   const div=document.createElement("div");div.className="cell"+(m.id===selected.id?" selected":"");
+   div.style.background=shade(m);
+   div.innerHTML=`<span>${m.convergence.toFixed(2)}</span>`;
+   div.title=`${m.id} ${m.interaction}`;
+   div.onclick=()=>{selected=m;render()};
+   matrix.appendChild(div);
+  }
+ }
+}
+function renderBars(){
+ bars.innerHTML="";
+ const vals={carbon_force:selected.carbon_force,silicon_force:selected.silicon_force,alignment:selected.alignment,contrast:selected.contrast,convergence:selected.convergence};
+ const max={carbon_force:2,silicon_force:2,alignment:1,contrast:1,convergence:2};
+ for(const [k,v] of Object.entries(vals)){
+  const pct=Math.max(0,Math.min(100,(v/(max[k]||1))*100));
+  const row=document.createElement("div");row.className="barRow";
+  row.innerHTML=`<div class="barLabel"><span>${k}</span><span>${v.toFixed(3)}</span></div><div class="barTrack"><div class="barFill" style="width:${pct}%"></div></div>`;
+  bars.appendChild(row);
+ }
+}
+function render(){
+ selectedId.textContent=selected.id.replaceAll("_"," ");
+ interaction.textContent=selected.interaction;
+ convergence.textContent=selected.convergence.toFixed(2);
+ winner.textContent=selected.winner;
+ renderMatrix();
+ inspector.textContent=JSON.stringify(selected,null,2);
+ renderBars();
+ output.textContent=JSON.stringify({best_convergence:bestConvergence(),strongest_contrast:strongestContrast(),matchup_count:matchups.length},null,2);
+}
+resetBoard();
+</script>
+</body>
+</html>
