@@ -1,9 +1,9 @@
 ROOT0-DLW-CHAIN-v1
 index : 201
 slug  : game-theory-core-engine-v2-4-9x9-court-matrix
-seal  : 87e6590ecb4d8d1015681b67ca0e8f051294fe2022251c6d843ddb962d1c1e9f
-prev  : 9d76258a6105058687707bc565807cd52adb77eec4b76e91eae9a8e70f4431fd
-link  : 9bc858466829404d78ac561663ec4a4a732a9b661ad3c365d8a57137c773838b
-head  : 13f9ace173ef2e60af38912ba329b4afcb5a38b84a0e4495e8d30327f8c99cc2
+seal  : 0ceba2665dbf94818e090c2998a2283b63e6a203fe2d602affc800b41e3a221d
+prev  : a8be82d997d3810065cc80799bbc42dbf6d30da1e0490aa9f5e472252f63615e
+link  : 0a8f89ecf7b76aa60066f89719267f6a36ef677f2c8e836a82bed3df9cb53efa
+head  : c4d41afeaef76470528856d54d86cf480a0e1c2fc8ebc60fbb9eb8e442585f2b
 
 — the tether: link = sha256(index|slug|seal|prev). the chain head commits to the whole corpus.
